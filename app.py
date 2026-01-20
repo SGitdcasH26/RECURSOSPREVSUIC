@@ -19,18 +19,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# CARGAR DATOS
+# CARGAR DATOS (Corrección para leer punto y coma ;)
 @st.cache_data
 def cargar_datos():
     try:
-        return pd.read_csv("recursos.csv", encoding='utf-8')
+        # Probamos con separador ; y codificación utf-8
+        return pd.read_csv("recursos.csv", sep=";", encoding='utf-8')
     except:
-        return pd.read_csv("recursos.csv", encoding='latin-1')
+        # Si falla, probamos con latin-1
+        return pd.read_csv("recursos.csv", sep=";", encoding='latin-1')
 
 try:
     df = cargar_datos()
 except:
-    st.error("⚠️ Sube el archivo recursos.csv al repositorio.")
+    st.error("⚠️ Error leyendo el archivo. Asegúrate de que se llama recursos.csv")
     st.stop()
 
 # INTERFAZ
@@ -41,9 +43,13 @@ col1, col2 = st.columns(2)
 with col1:
     perfil = st.radio("¿Tu situación?", ("Soy Superviviente (Duelo)", "Soy Sobreviviente (Prevención)"))
 with col2:
-    # Selector de provincia inteligente
-    provincias = sorted([p for p in df['Provincia'].unique() if p != "Nacional"])
-    provincia = st.selectbox("Tu Provincia:", provincias)
+    # Selector de provincia
+    if 'Provincia' in df.columns:
+        provincias = sorted([p for p in df['Provincia'].unique() if p != "Nacional"])
+        provincia = st.selectbox("Tu Provincia:", provincias)
+    else:
+        st.error("No leo la columna 'Provincia'. Revisa el CSV.")
+        st.stop()
 
 # Búsqueda opcional
 localidad = st.text_input("Tu localidad (Opcional):", placeholder="Ej: Dos Hermanas")
@@ -52,7 +58,11 @@ localidad = st.text_input("Tu localidad (Opcional):", placeholder="Ej: Dos Herma
 palabras_clave = ["Superviviente", "Familiares", "Allegados"] if "Superviviente" in perfil else ["Sobreviviente", "Prevención", "Propia"]
 
 # Filtro 1: Perfil
-df_filtro = df[df['Dirigido a'].fillna("").apply(lambda x: any(k.lower() in str(x).lower() for k in palabras_clave))]
+if 'Dirigido a' in df.columns:
+    df_filtro = df[df['Dirigido a'].fillna("").apply(lambda x: any(k.lower() in str(x).lower() for k in palabras_clave))]
+else:
+    df_filtro = df
+
 # Filtro 2: Provincia + Nacional
 df_final = df_filtro[(df_filtro['Provincia'] == provincia) | (df_filtro['Provincia'] == 'Nacional')]
 
