@@ -69,7 +69,7 @@ except:
 st.title("🤝 Recursos Ayuda Andalucía")
 st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suicidio.")
 
-DEFINIR PERFILES (Modificado con nuevo icono 🫴)
+# DEFINIR PERFILES (Modificado con nuevo icono 🫴)
 mapa_perfiles = {
     "🫴 Tengo pensamientos suicidas/He intentado suicidarme": ["Sobreviviente", "Propia", "Prevención", "Conducta"],],
     "🎗️ He perdido a un ser querido por suicidio": ["Superviviente", "Familiares", "Duelo", "Allegados"],
