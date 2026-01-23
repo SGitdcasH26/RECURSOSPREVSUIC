@@ -99,8 +99,11 @@ else:
     df_filtro = df
 
 # Filtro Geográfico
-df_final = df_filtro[(df_filtro['Provincia'] == provincia) | (df_filtro['Provincia'] == 'Nacional')]
-
+df_filtrado = df[
+    (df['Provincia'] == provincia_seleccionada) | 
+    (df['Provincia'] == 'Nacional') | 
+    (df['Provincia'] == 'Online')
+]
 # Filtro Localidad Estricto
 if localidad:
     coincide_localidad = df_final['Localidad / Ámbito'].str.contains(localidad, case=False, na=False)
