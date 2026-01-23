@@ -98,13 +98,33 @@ if 'Dirigido a' in df.columns:
 else:
     df_filtro = df
 
-# Filtro Geográfico
+# --- 1. Filtro Geográfico ---
+lista_provincias = ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"]
+
+# Selector de provincia
+provincia_seleccionada = st.selectbox("Selecciona tu provincia:", lista_provincias)
+
+# Aplicar filtro (Provincia + Nacional + Online)
 df_filtrado = df[
     (df['Provincia'] == provincia_seleccionada) | 
     (df['Provincia'] == 'Nacional') | 
     (df['Provincia'] == 'Online')
 ]
-# Filtro Localidad Estricto
+
+st.write(f"Mostrando recursos para: **{provincia_seleccionada}** (más recursos Nacionales y Online)")
+
+# --- 2. Preparar datos para siguientes filtros ---
+# Pasamos los datos filtrados a la variable final
+df_final = df_filtrado 
+
+# --- 3. Filtro Localidad Estricto (Opcional) ---
+# (Asegúrate de que tienes un 'st.text_input' para 'localidad' antes de esto)
+if 'localidad' in locals() and localidad:
+    coincide_localidad = df_final['Localidad / Ámbito'].str.contains(localidad, case=False, na=False)
+    es_nacional = df_final['Provincia'] == 'Nacional'
+    es_online = df_final['Provincia'] == 'Online'
+    # Mantenemos lo que coincide con localidad O es nacional O es online
+    df_final = df_final[coincide_localidad | es_nacional | es_online]
 if localidad:
     coincide_localidad = df_final['Localidad / Ámbito'].str.contains(localidad, case=False, na=False)
     es_nacional = df_final['Provincia'] == 'Nacional'
