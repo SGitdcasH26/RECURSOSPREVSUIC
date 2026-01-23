@@ -71,7 +71,7 @@ st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suic
 
 # DEFINIR PERFILES (Nuevos textos e iconos solicitados)
 mapa_perfiles = {
-    "🤝 Tengo pensamientos suicidas/He intentado suicidarme": ["Sobreviviente", "Propia", "Prevención", "Conducta"],
+    "🫴 Tengo pensamientos suicidas/He intentado suicidarme": ["Sobreviviente", "Propia", "Prevención", "Conducta"],],
     "🎗️ He perdido a un ser querido por suicidio": ["Superviviente", "Familiares", "Duelo", "Allegados"],
     "🧸 Busco ayuda para un menor o un joven": ["Jóvenes", "Menores", "Estudiantes", "Adolescentes", "Infantil"],
     "🏘️ Estoy preocupado por alguien conocido en relación al suicidio": ["Familiares", "Allegados", "Entorno", "Amistades"]
