@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 
 # --- 1. CONFIGURACIÓN DE LA PÁGINA ---
-# Cambio de logo: Ahora es una mano tendida (🤝)
 st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🤝", layout="centered")
 
 # --- 2. ESTILOS VISUALES ---
@@ -14,24 +13,22 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px;
         border-left: 6px solid #F4D03F;
     }
-    .titulo {color: #2C3E50; font-size: 1.2rem; font-weight: bold;}
+    .titulo {color: #2C3E50; font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;}
+    .subtitulo {font-size: 0.9rem; color: #666; margin-bottom: 10px; font-style: italic;}
     .dato {font-size: 0.95rem; margin-bottom: 5px; color: #444;}
     
-    /* Etiquetas visuales para ámbito */
-    .etiqueta-nacional {
-        font-size: 0.75rem; color: #fff; background-color: #2c3e50; /* Negro/Gris oscuro */
-        padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 5px;
+    /* Etiquetas visuales */
+    .tag {
+        font-size: 0.75rem; color: #fff; padding: 2px 8px; border-radius: 4px; 
+        display: inline-block; margin-right: 5px; margin-bottom: 5px;
     }
-    .etiqueta-andalucia {
-        font-size: 0.75rem; color: #fff; background-color: #007A33; /* Verde Andalucía */
-        padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 5px;
-    }
-    .etiqueta-local {
-        font-size: 0.75rem; color: #fff; background-color: #27ae60; /* Verde claro */
-        padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 5px;
-    }
+    .tag-nacional {background-color: #2c3e50;} /* Gris oscuro */
+    .tag-andalucia {background-color: #007A33;} /* Verde Andalucía */
+    .tag-local {background-color: #27ae60;} /* Verde claro */
+    .tag-online {background-color: #8e44ad;} /* Morado */
     
     a {color: #3498db; text-decoration: none; font-weight: bold;}
+    a:hover {text-decoration: underline;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -39,21 +36,24 @@ st.markdown("""
 @st.cache_data
 def cargar_datos():
     try:
+        # Intentamos leer con separador de punto y coma
         df = pd.read_csv("recursos.csv", sep=";", encoding='utf-8')
     except:
         try:
             df = pd.read_csv("recursos.csv", sep=";", encoding='latin-1')
         except:
-            st.error("⚠️ Error crítico: No puedo leer el archivo recursos.csv.")
+            st.error("⚠️ Error crítico: No puedo leer el archivo recursos.csv. Verifica que esté subido.")
             st.stop()
     
-    # Limpieza de datos
+    # Limpieza de nombres de columnas
     df.columns = df.columns.str.strip()
+    
+    # Limpieza de datos (quitar espacios extra y convertir nan a string vacío)
     for col in df.columns:
         if df[col].dtype == object:
-            df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].astype(str).str.strip().replace('nan', '')
 
-    # Corrección Provincias (Granada / Andalucía -> Granada)
+    # Normalizar Provincia (Si pone "Granada / Andalucía", dejar solo "Granada")
     if 'Provincia' in df.columns:
         df['Provincia'] = df['Provincia'].apply(lambda x: x.split('/')[0].strip() if '/' in x else x)
 
@@ -61,7 +61,8 @@ def cargar_datos():
 
 try:
     df = cargar_datos()
-except:
+except Exception as e:
+    st.error(f"Error al procesar los datos: {e}")
     st.stop()
 
 # --- 4. INTERFAZ DE USUARIO ---
@@ -69,120 +70,164 @@ except:
 st.title("🤝 Recursos Ayuda Andalucía")
 st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suicidio.")
 
-# DEFINIR PERFILES (Modificado con nuevo icono 🫴)
-mapa_perfiles = {
-    "🫴 Tengo pensamientos suicidas/He intentado suicidarme": ["Sobreviviente", "Propia", "Prevención", "Conducta"],
-    "🎗️ He perdido a un ser querido por suicidio": ["Superviviente", "Familiares", "Duelo", "Allegados"],
-    "🧸 Busco ayuda para un menor o un joven": ["Jóvenes", "Menores", "Estudiantes", "Adolescentes", "Infantil"],
-    "🏘️ Estoy preocupado por alguien conocido en relación al suicidio": ["Familiares", "Allegados", "Entorno", "Amistades"]
-}
+# DEFINIR PERFILES DE USUARIO
+opciones_perfil = [
+    "🫴 Tengo pensamientos suicidas/He intentado suicidarme",
+    "🎗️ He perdido a un ser querido por suicidio",
+    "🧸 Busco ayuda para un menor o un joven",
+    "🏘️ Estoy preocupado por alguien conocido"
+]
 
 col1, col2 = st.columns(2)
 
 with col1:
-    opcion_usuario = st.radio("¿Cuál es tu situación?", list(mapa_perfiles.keys()))
-    palabras_clave = mapa_perfiles[opcion_usuario]
+    perfil_usuario = st.radio("¿Cuál es tu situación?", opciones_perfil)
 
 with col2:
-    lista_provincias = sorted([p for p in df['Provincia'].unique() if p != "Nacional"])
-    provincia = st.selectbox("Selecciona tu Provincia:", lista_provincias)
+    # Obtenemos lista de provincias reales (excluyendo 'Nacional', 'Online', 'Todas' para el selector)
+    provincias_disponibles = sorted([
+        p for p in df['Provincia'].unique() 
+        if p not in ["Nacional", "Online", "Todas", ""]
+    ])
+    provincia_seleccionada = st.selectbox("Selecciona tu Provincia:", provincias_disponibles)
 
 # Búsqueda localidad
 localidad = st.text_input("Escribe tu localidad (Opcional):", placeholder="Ej: Bailén, Motril...")
 
-# --- 5. FILTRADO ---
+# --- 5. LÓGICA DE FILTRADO ---
 
-# Filtro Perfil
-if 'Dirigido a' in df.columns:
-    df_filtro = df[df['Dirigido a'].fillna("").apply(lambda x: any(k.lower() in str(x).lower() for k in palabras_clave))]
-else:
-    df_filtro = df
-
-# --- 1. Filtro Geográfico ---
-lista_provincias = ["Almería", "Cádiz", "Córdoba", "Granada", "Huelva", "Jaén", "Málaga", "Sevilla"]
-
-# Selector de provincia
-provincia_seleccionada = st.selectbox("Selecciona tu provincia:", lista_provincias)
-
-# Aplicar filtro (Provincia + Nacional + Online)
-df_filtrado = df[
+# PASO 1: FILTRO GEOGRÁFICO (El más importante)
+# Incluimos: La provincia elegida + Nacional + Online + Todas (recursos autonómicos genéricos)
+criterio_geografico = (
     (df['Provincia'] == provincia_seleccionada) | 
-    (df['Provincia'] == 'Nacional') | 
-    (df['Provincia'] == 'Online')
-]
+    (df['Provincia'].str.lower() == 'nacional') | 
+    (df['Provincia'].str.lower() == 'online') | 
+    (df['Provincia'].str.lower() == 'todas')
+)
+df_filtrado = df[criterio_geografico].copy()
 
-st.write(f"Mostrando recursos para: **{provincia_seleccionada}** (más recursos Nacionales y Online)")
+# PASO 2: FILTRO POR PERFIL (Lógica mejorada)
+if "preocupado" in perfil_usuario.lower():
+    # Muestra recursos para familiares/allegados O población general
+    keywords = ['familia', 'allegad', 'entorno', 'amistad', 'compañer', 'población general']
+    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
+    df_filtrado = df_filtrado[filtro_perfil]
 
-# --- 2. Preparar datos para siguientes filtros ---
-# Pasamos los datos filtrados a la variable final
-df_final = df_filtrado 
+elif "menor" in perfil_usuario.lower() or "joven" in perfil_usuario.lower():
+    # Muestra recursos específicos de juventud/educación O población general
+    keywords = ['jóvenes', 'joven', 'adolescen', 'estudiante', 'educativa', 'menor', 'infantil']
+    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
+    df_filtrado = df_filtrado[filtro_perfil]
 
-# --- 3. Filtro Localidad Estricto (Opcional) ---
-# (Asegúrate de que tienes un 'st.text_input' para 'localidad' antes de esto)
-if 'localidad' in locals() and localidad:
-    coincide_localidad = df_final['Localidad / Ámbito'].str.contains(localidad, case=False, na=False)
-    es_nacional = df_final['Provincia'] == 'Nacional'
-    es_online = df_final['Provincia'] == 'Online'
-    # Mantenemos lo que coincide con localidad O es nacional O es online
-    df_final = df_final[coincide_localidad | es_nacional | es_online]
+elif "perdido" in perfil_usuario.lower():
+    # Duelo
+    keywords = ['superviviente', 'duelo', 'familia', 'allegad']
+    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
+    df_filtrado = df_filtrado[filtro_perfil]
+
+else:
+    # Pensamientos suicidas (Sobrevivientes)
+    keywords = ['sobreviviente', 'propia', 'prevención', 'conducta', 'riesgo', 'población general']
+    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
+    df_filtrado = df_filtrado[filtro_perfil]
+
+# PASO 3: FILTRO LOCALIDAD (Opcional)
 if localidad:
-    coincide_localidad = df_final['Localidad / Ámbito'].str.contains(localidad, case=False, na=False)
-    es_nacional = df_final['Provincia'] == 'Nacional'
-    df_final = df_final[coincide_localidad | es_nacional]
+    # Si escribe localidad, filtramos por nombre de localidad PERO mantenemos los Nacionales/Online
+    criterio_localidad = (
+        df_filtrado['Localidad / Ámbito'].str.contains(localidad, case=False, na=False) |
+        (df_filtrado['Provincia'].str.lower() == 'nacional') |
+        (df_filtrado['Provincia'].str.lower() == 'online') |
+        (df_filtrado['Provincia'].str.lower() == 'todas')
+    )
+    df_filtrado = df_filtrado[criterio_localidad]
 
-# --- 6. LIMPIEZA Y ORDEN ---
-df_final = df_final.drop_duplicates(subset=['Nombre del recurso'], keep='first')
-
+# --- 6. ORDENAR RESULTADOS ---
+# Prioridad: 1. Coincidencia exacta localidad (si hay) -> 2. Provincia seleccionada -> 3. Nacional/Online
 def calcular_orden(row):
-    if row['Provincia'] == 'Nacional': return 2
-    if localidad and localidad.lower() in str(row['Localidad / Ámbito']).lower(): return 0
-    return 1
+    p = row['Provincia'].lower()
+    l = str(row['Localidad / Ámbito']).lower()
+    
+    # Si coincide la localidad escrita por el usuario, sale primero (0)
+    if localidad and localidad.lower() in l:
+        return 0
+    # Si es de la provincia seleccionada (y no es 'Todas'), sale segundo (1)
+    if p == provincia_seleccionada.lower():
+        return 1
+    # El resto (Nacional, Online, Todas) sale después (2)
+    return 2
 
-df_final['orden'] = df_final.apply(calcular_orden, axis=1)
-df_final = df_final.sort_values(by='orden')
+df_filtrado['orden'] = df_filtrado.apply(calcular_orden, axis=1)
+df_filtrado = df_filtrado.sort_values(by='orden')
+df_final = df_filtrado.drop_duplicates(subset=['Nombre del recurso']) # Evitar duplicados visuales
 
-# --- 7. MOSTRAR RESULTADOS (Con nuevos iconos geográficos) ---
+# --- 7. MOSTRAR RESULTADOS ---
+st.write(f"Mostrando **{len(df_final)}** recursos para: **{provincia_seleccionada}** (más Nacionales y Online)")
 st.markdown("---")
 
 if df_final.empty:
-    st.warning(f"No se han encontrado recursos específicos en '{localidad}'. Prueba a borrar la localidad.")
+    st.warning("No se encontraron recursos con estos filtros. Prueba a borrar la localidad o cambiar el perfil.")
 else:
     for _, row in df_final.iterrows():
         
-        # --- LÓGICA DE ICONOS GEOGRÁFICOS ---
-        es_nacional = row['Provincia'] == 'Nacional'
-        es_hospital = "Hospital" in str(row['Nombre del recurso'])
+        # Preparar variables para HTML
+        nombre = row['Nombre del recurso']
+        tipo = row['Tipo de recurso']
+        desc = row['Descripción clara del recurso']
+        prov = row['Provincia']
+        ambito = row['Localidad / Ámbito']
         
-        # Detectamos si es ámbito Andalucía (A veces viene en Localidad)
-        ambito_andalucia = "Andalucía" in str(row['Localidad / Ámbito']) or "Autonómico" in str(row['Localidad / Ámbito'])
-
-        if es_nacional:
-            icono_mapa = "🇪🇸"  # Mapa/Bandera España
-            etiqueta_texto = "ÁMBITO NACIONAL"
-            clase_css = "etiqueta-nacional"
-        elif ambito_andalucia:
-            icono_mapa = "🟢"  # Círculo Verde (Simula mapa Andalucía)
-            etiqueta_texto = "ÁMBITO ANDALUCÍA"
-            clase_css = "etiqueta-andalucia"
+        # Iconos y Etiquetas
+        if prov.lower() == 'nacional':
+            icono = "🇪🇸"
+            lbl_class = "tag-nacional"
+            lbl_text = "NACIONAL"
+        elif prov.lower() == 'online':
+            icono = "🌐"
+            lbl_class = "tag-online"
+            lbl_text = "ONLINE / REDES"
+        elif prov.lower() == 'todas' or "andaluc" in ambito.lower():
+            icono = "🟢"
+            lbl_class = "tag-andalucia"
+            lbl_text = "ANDALUCÍA"
         else:
-            icono_mapa = "📍"  # Chincheta verde (Simula mapa local relleno)
-            etiqueta_texto = f"{row['Localidad / Ámbito']}"
-            clase_css = "etiqueta-local"
-        
-        # Si es hospital, añadimos la cruz al nombre para no perder esa info
-        nombre_mostrar = f"🏥 {row['Nombre del recurso']}" if es_hospital else row['Nombre del recurso']
+            icono = "📍"
+            lbl_class = "tag-local"
+            lbl_text = f"{prov} - {ambito}"
 
-        # Datos
-        tel = str(row['Teléfono(s) de contacto']).replace("nan", "No disponible")
-        desc = str(row['Descripción clara del recurso'])
+        # Contacto (Teléfono, Web, Email) - Solo si tienen datos
+        html_contacto = ""
         
-        # Tarjeta HTML
+        # Teléfono
+        tel = row['Teléfono(s) de contacto']
+        if tel and len(tel) > 2:
+            html_contacto += f'<div class="dato">📞 <b>Tel:</b> <a href="tel:{tel}">{tel}</a></div>'
+        
+        # Web
+        web = row['Web']
+        if web and len(web) > 4:
+            # Asegurar que tenga http/https
+            link_web = web if web.startswith('http') else f'https://{web}'
+            html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
+            
+        # Email
+        email = row['Email']
+        if email and "@" in email:
+            html_contacto += f'<div class="dato">📧 <b>Email:</b> <a href="mailto:{email}">{email}</a></div>'
+
+        # Renderizar Tarjeta
         st.markdown(f"""
         <div class="card">
-            <div class="titulo">{icono_mapa} {nombre_mostrar}</div>
-            <div style="margin: 5px 0;"><span class="{clase_css}">{etiqueta_texto}</span></div>
-            <div class="dato">📞 <b>Teléfono:</b> <a href="tel:{tel}">{tel}</a></div>
-            <div class="dato">ℹ️ {desc}</div>
+            <div class="titulo">{icono} {nombre}</div>
+            <div class="subtitulo">{tipo}</div>
+            <div><span class="tag {lbl_class}">{lbl_text}</span></div>
+            <div style="margin-top: 10px; margin-bottom: 10px;">{desc}</div>
+            <div style="background-color: #f0f2f6; padding: 10px; border-radius: 8px;">
+                {html_contacto if html_contacto else "<small><i>Consultar web para más detalles de contacto</i></small>"}
+            </div>
+            <div style="margin-top:5px; font-size:0.8rem; color:#888;">
+                Dirigido a: {row['Dirigido a']}
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
