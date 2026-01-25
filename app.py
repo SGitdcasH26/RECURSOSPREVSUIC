@@ -259,13 +259,13 @@ else:
         pass # (Esta línea es solo para indicar que aquí va el bucle anterior)
 
 # ==========================================
-#      PIE DE PÁGINA DEFINITIVO (COPIA ESTO)
+#      PIE DE PÁGINA DEFINITIVO V2 (COPIA ESTO)
 # ==========================================
 st.markdown("---")
 st.markdown("""
     <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
         <b>Información sobre Recursos de prevención y posvención del suicidio en Andalucía.</b><br>
-        Creado por <b>Susana de Castro García</b>, enfermera del CES 061 Andalucía.<br>
+        Creado por <b>Susana de Castro García</b>, enfermera de emergencias prehospitalarias de Jaén.<br>
         <i>Enero 2026</i>
         <br><br>
         <div style="font-size: 0.75rem; color: #888;">
