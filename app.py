@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # --- 1. CONFIGURACIÓN DE LA PÁGINA ---
-# Cambio de icono principal a Salvavidas (🛟) para denotar ayuda/rescate
-st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🛟", layout="centered")
+# Cambio de icono a Brújula (🧭) para denotar orientación y guía
+st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🧭", layout="centered")
 
 # --- 2. ESTILOS VISUALES ---
 st.markdown("""
@@ -65,20 +65,17 @@ except Exception as e:
 
 # --- 4. INTERFAZ DE USUARIO ---
 
-# Nuevo título con icono de Salvavidas
-st.title("🛟 Recursos Ayuda Andalucía")
+# Título con Brújula
+st.title("🧭 Recursos Ayuda Andalucía")
 st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suicidio.")
 
-# --- DEFINICIÓN DE PERFILES Y LÓGICA ---
-# Diccionario: "Texto Opción": ["palabra_clave_1", "palabra_clave_2"...]
-# Nota: La lógica exacta se aplica más abajo en el filtrado.
-
+# --- DEFINICIÓN DE PERFILES ---
 opciones_perfil = [
     "🆘 Tengo pensamientos suicidas / He intentado suicidarme",
     "👫 Busco ayuda para un menor o un joven",
-    "👥 Población general",
+    "👥 Población general", # Antes "Estoy preocupado..."
     "🧑‍⚕️ Profesionales sanitarios y primeros intervinientes",
-    "🎗️ He perdido a un ser querido por suicidio" # Mantenido para no perder recursos de duelo
+    "🎗️ He perdido a un ser querido por suicidio"
 ]
 
 col1, col2 = st.columns(2)
@@ -107,49 +104,40 @@ criterio_geografico = (
 )
 df_filtrado = df[criterio_geografico].copy()
 
-# PASO 2: FILTRO POR PERFIL (LÓGICA ACTUALIZADA)
-
-# Función auxiliar para buscar palabras clave en la columna 'Dirigido a'
+# PASO 2: FILTRO POR PERFIL
 def buscar_keywords(texto_fila, keywords):
     texto_fila = texto_fila.lower()
     return any(k in texto_fila for k in keywords)
 
 if "🆘" in perfil_usuario:
     # GRUPO 1: SOS
-    # Debe contener: Sobrevivientes, Población General o Conducta Suicida
     keywords = ['sobreviviente', 'población general', 'conducta suicida', 'personas con conducta']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "👫" in perfil_usuario:
     # GRUPO 2: MENORES / JÓVENES
-    # Debe contener: Menores, Jóvenes, Población General (Añadimos estudiantes/adolescentes por si acaso)
     keywords = ['menor', 'jóvenes', 'joven', 'adolescen', 'estudiante', 'infantil', 'población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
-elif "👥" in perfil_usuario: # Población General (Antes Preocupado)
+elif "👥" in perfil_usuario:
     # GRUPO 3: POBLACIÓN GENERAL
-    # Debe contener: Población General
     keywords = ['población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "🧑‍⚕️" in perfil_usuario:
     # GRUPO 4: PROFESIONALES
-    # Debe contener: Profesionales y Población General
     keywords = ['profesional', 'sanitario', 'interviniente', 'población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "🎗️" in perfil_usuario:
-    # GRUPO DUELO (Mantenido para recursos específicos de supervivientes)
+    # GRUPO DUELO
     keywords = ['superviviente', 'duelo', 'familia', 'allegad']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 else:
-    # Por defecto
     filtro_perfil = [True] * len(df_filtrado)
 
-# Aplicar el filtro de perfil calculado arriba
 df_filtrado = df_filtrado[filtro_perfil]
-
 
 # PASO 3: FILTRO LOCALIDAD
 if localidad:
@@ -161,11 +149,22 @@ if localidad:
     )
     df_filtrado = df_filtrado[criterio_localidad]
 
-# --- 6. ORDENAR RESULTADOS ---
+# --- 6. ORDENAR RESULTADOS (Nueva lógica de Prioridad) ---
 def calcular_orden(row):
+    nombre = str(row['Nombre del recurso']).lower()
     p = row['Provincia'].lower()
     l = str(row['Localidad / Ámbito']).lower()
     
+    # --- LÓGICA ESPECIAL PARA GRUPO SOS ---
+    if "🆘" in perfil_usuario:
+        # Prioridad ABSOLUTA: 061, 112, 024 (Se muestran primero siempre)
+        if "061" in nombre or "112" in nombre or "024" in nombre:
+            return -10 
+        # Prioridad SECUNDARIA: Salud Responde
+        if "salud responde" in nombre:
+            return -5
+
+    # --- LÓGICA GEOGRÁFICA ESTÁNDAR (Para el resto) ---
     if localidad and localidad.lower() in l: return 0
     if p == provincia_seleccionada.lower(): return 1
     return 2
@@ -183,7 +182,6 @@ if df_final.empty:
 else:
     for _, row in df_final.iterrows():
         
-        # Preparar variables
         nombre = row['Nombre del recurso']
         tipo = row['Tipo de recurso']
         desc = row['Descripción clara del recurso']
