@@ -256,13 +256,27 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-# --- PIE DE PÁGINA DEFINITIVO ---
+# ==========================================
+#      PIE DE PÁGINA FINAL (CON REGISTROS)
+# ==========================================
 st.markdown("---")
 st.markdown("""
     <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
         <b>Información sobre Recursos de prevención y posvención del suicidio en Andalucía.</b><br>
         Creado por <b>Susana de Castro García</b>, enfermera de emergencias prehospitalarias de Jaén.<br>
-        <i>Enero 2026</i>
+        <i>Última actualización: Enero 2026</i>
+        <br><br>
+        
+        <div style="font-size: 0.8rem; background-color: #f8f9fa; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #eee;">
+            🛡️ <b>Registro de Propiedad Intelectual (Safe Creative):</b> <br>
+            Código de inscripción: <b>2301254360025</b>
+            <br><br>
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" style="color: #444; text-decoration: none; font-weight: bold;">
+             ⚖️ Licencia CC BY-NC-SA 4.0
+            </a><br>
+            <span style="font-size: 0.75rem;">(Se permite compartir citando autoría y sin fines comerciales)</span>
+        </div>
+        
         <br><br>
         <div style="font-size: 0.75rem; color: #888;">
             Los derechos de propiedad intelectual de los recursos externos enlazados pertenecen a sus respectivos organismos y autores.<br>
