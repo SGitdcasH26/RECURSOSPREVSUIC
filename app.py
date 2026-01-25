@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # --- 1. CONFIGURACIÓN DE LA PÁGINA ---
-# Cambio de icono a Brújula (🧭) para denotar orientación y guía
+# Icono: Brújula (🧭)
 st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🧭", layout="centered")
 
 # --- 2. ESTILOS VISUALES ---
@@ -65,7 +65,6 @@ except Exception as e:
 
 # --- 4. INTERFAZ DE USUARIO ---
 
-# Título con Brújula
 st.title("🧭 Recursos Ayuda Andalucía")
 st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suicidio.")
 
@@ -73,7 +72,7 @@ st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suic
 opciones_perfil = [
     "🆘 Tengo pensamientos suicidas / He intentado suicidarme",
     "👫 Busco ayuda para un menor o un joven",
-    "👥 Población general", # Antes "Estoy preocupado..."
+    "👥 Población general",
     "🧑‍⚕️ Profesionales sanitarios y primeros intervinientes",
     "🎗️ He perdido a un ser querido por suicidio"
 ]
@@ -110,27 +109,22 @@ def buscar_keywords(texto_fila, keywords):
     return any(k in texto_fila for k in keywords)
 
 if "🆘" in perfil_usuario:
-    # GRUPO 1: SOS
     keywords = ['sobreviviente', 'población general', 'conducta suicida', 'personas con conducta']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "👫" in perfil_usuario:
-    # GRUPO 2: MENORES / JÓVENES
     keywords = ['menor', 'jóvenes', 'joven', 'adolescen', 'estudiante', 'infantil', 'población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "👥" in perfil_usuario:
-    # GRUPO 3: POBLACIÓN GENERAL
     keywords = ['población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "🧑‍⚕️" in perfil_usuario:
-    # GRUPO 4: PROFESIONALES
     keywords = ['profesional', 'sanitario', 'interviniente', 'población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 elif "🎗️" in perfil_usuario:
-    # GRUPO DUELO
     keywords = ['superviviente', 'duelo', 'familia', 'allegad']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
@@ -149,25 +143,45 @@ if localidad:
     )
     df_filtrado = df_filtrado[criterio_localidad]
 
-# --- 6. ORDENAR RESULTADOS (Nueva lógica de Prioridad) ---
+# --- 6. ORDENAR RESULTADOS (LÓGICA ACTUALIZADA) ---
 def calcular_orden(row):
     nombre = str(row['Nombre del recurso']).lower()
-    p = row['Provincia'].lower()
-    l = str(row['Localidad / Ámbito']).lower()
+    prov_recurso = row['Provincia'].lower()
+    ambito = str(row['Localidad / Ámbito']).lower()
+    prov_usuario = provincia_seleccionada.lower()
     
-    # --- LÓGICA ESPECIAL PARA GRUPO SOS ---
+    # --- A. LÓGICA ESPECIAL PARA GRUPO SOS ---
     if "🆘" in perfil_usuario:
-        # Prioridad ABSOLUTA: 061, 112, 024 (Se muestran primero siempre)
+        # 1. Prioridad ABSOLUTA: 061, 112, 024
         if "061" in nombre or "112" in nombre or "024" in nombre:
             return -10 
-        # Prioridad SECUNDARIA: Salud Responde
+        # 2. Prioridad SECUNDARIA: Salud Responde
         if "salud responde" in nombre:
             return -5
+        # El resto sigue el orden normal
 
-    # --- LÓGICA GEOGRÁFICA ESTÁNDAR (Para el resto) ---
-    if localidad and localidad.lower() in l: return 0
-    if p == provincia_seleccionada.lower(): return 1
-    return 2
+    # --- B. LÓGICA DE ORDEN GEOGRÁFICO (Para todos los grupos) ---
+    # 1. Localidad exacta (si el usuario escribió algo)
+    if localidad and localidad.lower() in ambito: 
+        return 0
+    
+    # 2. Provincia Seleccionada (Recursos Locales)
+    if prov_recurso == prov_usuario:
+        return 1
+        
+    # 3. Recursos de Andalucía (Provincia = 'Todas')
+    if prov_recurso == 'todas':
+        return 2
+        
+    # 4. Recursos Nacionales
+    if prov_recurso == 'nacional':
+        return 3
+        
+    # 5. Recursos Online
+    if prov_recurso == 'online':
+        return 4
+        
+    return 5
 
 df_filtrado['orden'] = df_filtrado.apply(calcular_orden, axis=1)
 df_filtrado = df_filtrado.sort_values(by='orden')
@@ -242,25 +256,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-# --- 7. MOSTRAR RESULTADOS (Parte final del código) ---
-st.write(f"Mostrando **{len(df_final)}** recursos para: **{provincia_seleccionada}**")
-st.markdown("---")
-
-if df_final.empty:
-    st.warning("No se encontraron recursos con estos filtros.")
-else:
-    for _, row in df_final.iterrows():
-        # ... (Todo el código del bucle for para las tarjetas se mantiene igual) ...
-        # (Si no has tocado el bucle, solo necesitas cambiar lo de abajo)
-        
-        # Para facilitarte el copiar y pegar, aquí NO pongo el bucle entero de nuevo, 
-        # asumo que esa parte ya la tienes bien.
-        # Solo tienes que borrar el último st.markdown del final y poner este:
-        pass # (Esta línea es solo para indicar que aquí va el bucle anterior)
-
-# ==========================================
-#      PIE DE PÁGINA DEFINITIVO V2 (COPIA ESTO)
-# ==========================================
+# --- PIE DE PÁGINA DEFINITIVO ---
 st.markdown("---")
 st.markdown("""
     <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
