@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # --- 1. CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🤝", layout="centered")
+# Cambio de icono principal a Salvavidas (🛟) para denotar ayuda/rescate
+st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🛟", layout="centered")
 
 # --- 2. ESTILOS VISUALES ---
 st.markdown("""
@@ -36,7 +37,6 @@ st.markdown("""
 @st.cache_data
 def cargar_datos():
     try:
-        # Intentamos leer con separador de punto y coma
         df = pd.read_csv("recursos.csv", sep=";", encoding='utf-8')
     except:
         try:
@@ -45,15 +45,13 @@ def cargar_datos():
             st.error("⚠️ Error crítico: No puedo leer el archivo recursos.csv. Verifica que esté subido.")
             st.stop()
     
-    # Limpieza de nombres de columnas
+    # Limpieza básica
     df.columns = df.columns.str.strip()
-    
-    # Limpieza de datos (quitar espacios extra y convertir nan a string vacío)
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].astype(str).str.strip().replace('nan', '')
 
-    # Normalizar Provincia (Si pone "Granada / Andalucía", dejar solo "Granada")
+    # Normalizar Provincia
     if 'Provincia' in df.columns:
         df['Provincia'] = df['Provincia'].apply(lambda x: x.split('/')[0].strip() if '/' in x else x)
 
@@ -67,15 +65,20 @@ except Exception as e:
 
 # --- 4. INTERFAZ DE USUARIO ---
 
-st.title("🤝 Recursos Ayuda Andalucía")
+# Nuevo título con icono de Salvavidas
+st.title("🛟 Recursos Ayuda Andalucía")
 st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suicidio.")
 
-# DEFINIR PERFILES DE USUARIO
+# --- DEFINICIÓN DE PERFILES Y LÓGICA ---
+# Diccionario: "Texto Opción": ["palabra_clave_1", "palabra_clave_2"...]
+# Nota: La lógica exacta se aplica más abajo en el filtrado.
+
 opciones_perfil = [
-    "🫴 Tengo pensamientos suicidas/He intentado suicidarme",
-    "🎗️ He perdido a un ser querido por suicidio",
-    "🧸 Busco ayuda para un menor o un joven",
-    "🏘️ Estoy preocupado por alguien conocido"
+    "🆘 Tengo pensamientos suicidas / He intentado suicidarme",
+    "👫 Busco ayuda para un menor o un joven",
+    "👥 Población general",
+    "🧑‍⚕️ Profesionales sanitarios y primeros intervinientes",
+    "🎗️ He perdido a un ser querido por suicidio" # Mantenido para no perder recursos de duelo
 ]
 
 col1, col2 = st.columns(2)
@@ -84,7 +87,6 @@ with col1:
     perfil_usuario = st.radio("¿Cuál es tu situación?", opciones_perfil)
 
 with col2:
-    # Obtenemos lista de provincias reales (excluyendo 'Nacional', 'Online', 'Todas' para el selector)
     provincias_disponibles = sorted([
         p for p in df['Provincia'].unique() 
         if p not in ["Nacional", "Online", "Todas", ""]
@@ -96,8 +98,7 @@ localidad = st.text_input("Escribe tu localidad (Opcional):", placeholder="Ej: B
 
 # --- 5. LÓGICA DE FILTRADO ---
 
-# PASO 1: FILTRO GEOGRÁFICO (El más importante)
-# Incluimos: La provincia elegida + Nacional + Online + Todas (recursos autonómicos genéricos)
+# PASO 1: FILTRO GEOGRÁFICO
 criterio_geografico = (
     (df['Provincia'] == provincia_seleccionada) | 
     (df['Provincia'].str.lower() == 'nacional') | 
@@ -106,34 +107,52 @@ criterio_geografico = (
 )
 df_filtrado = df[criterio_geografico].copy()
 
-# PASO 2: FILTRO POR PERFIL (Lógica mejorada)
-if "preocupado" in perfil_usuario.lower():
-    # Muestra recursos para familiares/allegados O población general
-    keywords = ['familia', 'allegad', 'entorno', 'amistad', 'compañer', 'población general']
-    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
-    df_filtrado = df_filtrado[filtro_perfil]
+# PASO 2: FILTRO POR PERFIL (LÓGICA ACTUALIZADA)
 
-elif "menor" in perfil_usuario.lower() or "joven" in perfil_usuario.lower():
-    # Muestra recursos específicos de juventud/educación O población general
-    keywords = ['jóvenes', 'joven', 'adolescen', 'estudiante', 'educativa', 'menor', 'infantil']
-    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
-    df_filtrado = df_filtrado[filtro_perfil]
+# Función auxiliar para buscar palabras clave en la columna 'Dirigido a'
+def buscar_keywords(texto_fila, keywords):
+    texto_fila = texto_fila.lower()
+    return any(k in texto_fila for k in keywords)
 
-elif "perdido" in perfil_usuario.lower():
-    # Duelo
+if "🆘" in perfil_usuario:
+    # GRUPO 1: SOS
+    # Debe contener: Sobrevivientes, Población General o Conducta Suicida
+    keywords = ['sobreviviente', 'población general', 'conducta suicida', 'personas con conducta']
+    filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
+
+elif "👫" in perfil_usuario:
+    # GRUPO 2: MENORES / JÓVENES
+    # Debe contener: Menores, Jóvenes, Población General (Añadimos estudiantes/adolescentes por si acaso)
+    keywords = ['menor', 'jóvenes', 'joven', 'adolescen', 'estudiante', 'infantil', 'población general']
+    filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
+
+elif "👥" in perfil_usuario: # Población General (Antes Preocupado)
+    # GRUPO 3: POBLACIÓN GENERAL
+    # Debe contener: Población General
+    keywords = ['población general']
+    filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
+
+elif "🧑‍⚕️" in perfil_usuario:
+    # GRUPO 4: PROFESIONALES
+    # Debe contener: Profesionales y Población General
+    keywords = ['profesional', 'sanitario', 'interviniente', 'población general']
+    filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
+
+elif "🎗️" in perfil_usuario:
+    # GRUPO DUELO (Mantenido para recursos específicos de supervivientes)
     keywords = ['superviviente', 'duelo', 'familia', 'allegad']
-    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
-    df_filtrado = df_filtrado[filtro_perfil]
+    filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
 else:
-    # Pensamientos suicidas (Sobrevivientes)
-    keywords = ['sobreviviente', 'propia', 'prevención', 'conducta', 'riesgo', 'población general']
-    filtro_perfil = df_filtrado['Dirigido a'].str.lower().apply(lambda x: any(k in x for k in keywords))
-    df_filtrado = df_filtrado[filtro_perfil]
+    # Por defecto
+    filtro_perfil = [True] * len(df_filtrado)
 
-# PASO 3: FILTRO LOCALIDAD (Opcional)
+# Aplicar el filtro de perfil calculado arriba
+df_filtrado = df_filtrado[filtro_perfil]
+
+
+# PASO 3: FILTRO LOCALIDAD
 if localidad:
-    # Si escribe localidad, filtramos por nombre de localidad PERO mantenemos los Nacionales/Online
     criterio_localidad = (
         df_filtrado['Localidad / Ámbito'].str.contains(localidad, case=False, na=False) |
         (df_filtrado['Provincia'].str.lower() == 'nacional') |
@@ -143,39 +162,34 @@ if localidad:
     df_filtrado = df_filtrado[criterio_localidad]
 
 # --- 6. ORDENAR RESULTADOS ---
-# Prioridad: 1. Coincidencia exacta localidad (si hay) -> 2. Provincia seleccionada -> 3. Nacional/Online
 def calcular_orden(row):
     p = row['Provincia'].lower()
     l = str(row['Localidad / Ámbito']).lower()
     
-    # Si coincide la localidad escrita por el usuario, sale primero (0)
-    if localidad and localidad.lower() in l:
-        return 0
-    # Si es de la provincia seleccionada (y no es 'Todas'), sale segundo (1)
-    if p == provincia_seleccionada.lower():
-        return 1
-    # El resto (Nacional, Online, Todas) sale después (2)
+    if localidad and localidad.lower() in l: return 0
+    if p == provincia_seleccionada.lower(): return 1
     return 2
 
 df_filtrado['orden'] = df_filtrado.apply(calcular_orden, axis=1)
 df_filtrado = df_filtrado.sort_values(by='orden')
-df_final = df_filtrado.drop_duplicates(subset=['Nombre del recurso']) # Evitar duplicados visuales
+df_final = df_filtrado.drop_duplicates(subset=['Nombre del recurso'])
 
 # --- 7. MOSTRAR RESULTADOS ---
-st.write(f"Mostrando **{len(df_final)}** recursos para: **{provincia_seleccionada}** (más Nacionales y Online)")
+st.write(f"Mostrando **{len(df_final)}** recursos para: **{provincia_seleccionada}**")
 st.markdown("---")
 
 if df_final.empty:
-    st.warning("No se encontraron recursos con estos filtros. Prueba a borrar la localidad o cambiar el perfil.")
+    st.warning("No se encontraron recursos con estos filtros.")
 else:
     for _, row in df_final.iterrows():
         
-        # Preparar variables para HTML
+        # Preparar variables
         nombre = row['Nombre del recurso']
         tipo = row['Tipo de recurso']
         desc = row['Descripción clara del recurso']
         prov = row['Provincia']
         ambito = row['Localidad / Ámbito']
+        dirigido = row['Dirigido a']
         
         # Iconos y Etiquetas
         if prov.lower() == 'nacional':
@@ -195,7 +209,7 @@ else:
             lbl_class = "tag-local"
             lbl_text = f"{prov} - {ambito}"
 
-        # Contacto (Teléfono, Web, Email) - Solo si tienen datos
+        # Contacto HTML
         html_contacto = ""
         
         # Teléfono
@@ -206,7 +220,6 @@ else:
         # Web
         web = row['Web']
         if web and len(web) > 4:
-            # Asegurar que tenga http/https
             link_web = web if web.startswith('http') else f'https://{web}'
             html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
             
@@ -223,10 +236,10 @@ else:
             <div><span class="tag {lbl_class}">{lbl_text}</span></div>
             <div style="margin-top: 10px; margin-bottom: 10px;">{desc}</div>
             <div style="background-color: #f0f2f6; padding: 10px; border-radius: 8px;">
-                {html_contacto if html_contacto else "<small><i>Consultar web para más detalles de contacto</i></small>"}
+                {html_contacto if html_contacto else "<small><i>Consultar web para más detalles</i></small>"}
             </div>
             <div style="margin-top:5px; font-size:0.8rem; color:#888;">
-                Dirigido a: {row['Dirigido a']}
+                <b>Dirigido a:</b> {dirigido}
             </div>
         </div>
         """, unsafe_allow_html=True)
