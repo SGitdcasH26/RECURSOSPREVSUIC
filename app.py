@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 
 # --- 1. CONFIGURACIÓN DE LA PÁGINA ---
-# Icono: Brújula (🧭)
 st.set_page_config(page_title="Recursos Ayuda Andalucía", page_icon="🧭", layout="centered")
 
 # --- 2. ESTILOS VISUALES ---
@@ -143,41 +142,29 @@ if localidad:
     )
     df_filtrado = df_filtrado[criterio_localidad]
 
-# --- 6. ORDENAR RESULTADOS (LÓGICA ACTUALIZADA) ---
+# --- 6. ORDENAR RESULTADOS ---
 def calcular_orden(row):
     nombre = str(row['Nombre del recurso']).lower()
     prov_recurso = row['Provincia'].lower()
     ambito = str(row['Localidad / Ámbito']).lower()
     prov_usuario = provincia_seleccionada.lower()
     
-    # --- A. LÓGICA ESPECIAL PARA GRUPO SOS ---
+    # A. LÓGICA ESPECIAL PARA GRUPO SOS
     if "🆘" in perfil_usuario:
-        # 1. Prioridad ABSOLUTA: 061, 112, 024
         if "061" in nombre or "112" in nombre or "024" in nombre:
             return -10 
-        # 2. Prioridad SECUNDARIA: Salud Responde
         if "salud responde" in nombre:
             return -5
-        # El resto sigue el orden normal
 
-    # --- B. LÓGICA DE ORDEN GEOGRÁFICO (Para todos los grupos) ---
-    # 1. Localidad exacta (si el usuario escribió algo)
+    # B. LÓGICA DE ORDEN GEOGRÁFICO
     if localidad and localidad.lower() in ambito: 
         return 0
-    
-    # 2. Provincia Seleccionada (Recursos Locales)
     if prov_recurso == prov_usuario:
         return 1
-        
-    # 3. Recursos de Andalucía (Provincia = 'Todas')
     if prov_recurso == 'todas':
         return 2
-        
-    # 4. Recursos Nacionales
     if prov_recurso == 'nacional':
         return 3
-        
-    # 5. Recursos Online
     if prov_recurso == 'online':
         return 4
         
@@ -195,52 +182,36 @@ if df_final.empty:
     st.warning("No se encontraron recursos con estos filtros.")
 else:
     for _, row in df_final.iterrows():
-        
         nombre = row['Nombre del recurso']
         tipo = row['Tipo de recurso']
         desc = row['Descripción clara del recurso']
         prov = row['Provincia']
         ambito = row['Localidad / Ámbito']
         dirigido = row['Dirigido a']
+        tel = row['Teléfono(s) de contacto']
+        web = row['Web']
+        email = row['Email']
         
-        # Iconos y Etiquetas
+        # Iconos
         if prov.lower() == 'nacional':
-            icono = "🇪🇸"
-            lbl_class = "tag-nacional"
-            lbl_text = "NACIONAL"
+            icono, lbl_class, lbl_text = "🇪🇸", "tag-nacional", "NACIONAL"
         elif prov.lower() == 'online':
-            icono = "🌐"
-            lbl_class = "tag-online"
-            lbl_text = "ONLINE / REDES"
+            icono, lbl_class, lbl_text = "🌐", "tag-online", "ONLINE / REDES"
         elif prov.lower() == 'todas' or "andaluc" in ambito.lower():
-            icono = "🟢"
-            lbl_class = "tag-andalucia"
-            lbl_text = "ANDALUCÍA"
+            icono, lbl_class, lbl_text = "🟢", "tag-andalucia", "ANDALUCÍA"
         else:
-            icono = "📍"
-            lbl_class = "tag-local"
-            lbl_text = f"{prov} - {ambito}"
+            icono, lbl_class, lbl_text = "📍", "tag-local", f"{prov} - {ambito}"
 
         # Contacto HTML
         html_contacto = ""
-        
-        # Teléfono
-        tel = row['Teléfono(s) de contacto']
         if tel and len(tel) > 2:
             html_contacto += f'<div class="dato">📞 <b>Tel:</b> <a href="tel:{tel}">{tel}</a></div>'
-        
-        # Web
-        web = row['Web']
         if web and len(web) > 4:
             link_web = web if web.startswith('http') else f'https://{web}'
             html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
-            
-        # Email
-        email = row['Email']
         if email and "@" in email:
             html_contacto += f'<div class="dato">📧 <b>Email:</b> <a href="mailto:{email}">{email}</a></div>'
 
-        # Renderizar Tarjeta
         st.markdown(f"""
         <div class="card">
             <div class="titulo">{icono} {nombre}</div>
@@ -256,9 +227,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-# ==========================================
-#      PIE DE PÁGINA FINAL (CORREGIDO)
-# ==========================================
+# --- PIE DE PÁGINA DEFINITIVO (CON REGISTROS) ---
 st.markdown("---")
 st.markdown("""
     <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
