@@ -257,7 +257,7 @@ else:
         """, unsafe_allow_html=True)
 
 # ==========================================
-#      PIE DE PÁGINA FINAL (CON REGISTROS)
+#      PIE DE PÁGINA DEFINITIVO (CORREGIDO)
 # ==========================================
 st.markdown("---")
 st.markdown("""
