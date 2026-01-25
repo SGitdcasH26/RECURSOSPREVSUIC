@@ -228,35 +228,38 @@ else:
         """, unsafe_allow_html=True)
 
 # ==========================================
-#      PIE DE PÁGINA (ESTRATEGIA INFALIBLE)
+#      PIE DE PÁGINA (VERSIÓN NATIVA)
 # ==========================================
+st.divider() # Línea separadora visual
 
-# 1. Guardamos el diseño en una variable aparte para que no haya errores
-contenido_html = """
-    <hr>
-    <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
-        <b>Información sobre Recursos de prevención y posvención del suicidio en Andalucía.</b><br>
-        Creado por <b>Susana de Castro García</b>, enfermera de emergencias prehospitalarias de Jaén.<br>
-        <i>Última actualización: Enero 2026</i>
-        <br><br>
-        
-        <div style="font-size: 0.8rem; background-color: #f8f9fa; padding: 15px; border-radius: 8px; display: inline-block; border: 1px solid #e0e0e0;">
-            🛡️ <b>Registro de Propiedad Intelectual (Safe Creative):</b> <br>
-            Código de inscripción: <b>2301254360025</b>
-            <br><br>
-            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es" target="_blank" style="color: #333; text-decoration: none; font-weight: bold;">
-             ⚖️ Licencia CC BY-NC-SA 4.0
-            </a><br>
-            <span style="font-size: 0.75rem; color: #666;">(Se permite compartir citando autoría y sin fines comerciales)</span>
-        </div>
-        
-        <br><br>
-        <div style="font-size: 0.75rem; color: #888;">
-            Los derechos de propiedad intelectual de los recursos externos enlazados pertenecen a sus respectivos organismos y autores.<br>
-            Esta herramienta actúa únicamente como directorio facilitador de acceso.
-        </div>
-    </div>
-"""
+# Usamos columnas para centrar un poco el contenido
+col_izq, col_centro, col_der = st.columns([1, 8, 1])
 
-# 2. Le decimos a Streamlit que lo escriba permitiendo HTML
-st.markdown(contenido_html, unsafe_allow_html=True)
+with col_centro:
+    # 1. Título y Autoría
+    st.markdown(
+        "<h4 style='text-align: center; color: #555;'>Recursos de prevención y posvención del suicidio</h4>", 
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        "<div style='text-align: center;'>Creado por <b>Susana de Castro García</b><br>Enfermera de emergencias (Jaén) | Enero 2026</div>", 
+        unsafe_allow_html=True
+    )
+    st.write("") # Espacio en blanco
+
+    # 2. Caja de Licencias (Usamos st.info que crea un recuadro azul/gris automático)
+    with st.info("🛡️ **Información de Propiedad Intelectual y Licencia**"):
+        st.markdown("**Registro Safe Creative:**")
+        st.code("2301254360025", language="text") # Muestra el número destacado
+        
+        st.markdown("---") # Pequeña separación
+        
+        st.markdown("⚖️ **Licencia de uso:**")
+        st.markdown("[**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es) (Creative Commons)")
+        st.caption("✅ Se permite compartir citando autoría. | 🚫 Prohibido uso comercial.")
+
+    # 3. Descargo de responsabilidad final
+    st.caption(
+        "Nota: Los derechos de propiedad intelectual de los recursos externos enlazados "
+        "pertenecen a sus respectivos organismos. Esta herramienta es un directorio facilitador."
+    )
