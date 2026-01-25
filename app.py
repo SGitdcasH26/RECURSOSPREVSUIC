@@ -237,7 +237,7 @@ c1, c2, c3 = st.columns([1, 8, 1])
 
 with c2:
     st.markdown("<div style='text-align: center; color: #555;'>Creado por <b>Susana de Castro García</b></div>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; color: #555; font-size: 0.9rem;'>Enfermera de emergencias (Jaén) | Enero 2026</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; color: #555; font-size: 0.9rem;'>Enfermera de emergencias prehospitalarias (Jaén) | Enero 2026</div>", unsafe_allow_html=True)
     
     st.write("") # Espacio
     
