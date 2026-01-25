@@ -243,14 +243,34 @@ else:
         """, unsafe_allow_html=True)
 
 # --- 7. MOSTRAR RESULTADOS (Parte final del código) ---
-# ... (el bucle for anterior sigue igual) ...
+st.write(f"Mostrando **{len(df_final)}** recursos para: **{provincia_seleccionada}**")
+st.markdown("---")
 
-# PIE DE PÁGINA ACTUALIZADO
+if df_final.empty:
+    st.warning("No se encontraron recursos con estos filtros.")
+else:
+    for _, row in df_final.iterrows():
+        # ... (Todo el código del bucle for para las tarjetas se mantiene igual) ...
+        # (Si no has tocado el bucle, solo necesitas cambiar lo de abajo)
+        
+        # Para facilitarte el copiar y pegar, aquí NO pongo el bucle entero de nuevo, 
+        # asumo que esa parte ya la tienes bien.
+        # Solo tienes que borrar el último st.markdown del final y poner este:
+        pass # (Esta línea es solo para indicar que aquí va el bucle anterior)
+
+# ==========================================
+#      PIE DE PÁGINA DEFINITIVO (COPIA ESTO)
+# ==========================================
 st.markdown("---")
 st.markdown("""
-    <div style="text-align: center; color: #666; font-size: 0.85rem;">
+    <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
         <b>Información sobre Recursos de prevención y posvención del suicidio en Andalucía.</b><br>
         Creado por <b>Susana de Castro García</b>, enfermera del CES 061 Andalucía.<br>
         <i>Enero 2026</i>
+        <br><br>
+        <div style="font-size: 0.75rem; color: #888;">
+            Los derechos de propiedad intelectual de los recursos externos enlazados pertenecen a sus respectivos organismos y autores.<br>
+            Esta herramienta actúa únicamente como directorio facilitador de acceso.
+        </div>
     </div>
 """, unsafe_allow_html=True)
