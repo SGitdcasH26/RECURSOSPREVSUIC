@@ -228,38 +228,25 @@ else:
         """, unsafe_allow_html=True)
 
 # ==========================================
-#      PIE DE PÁGINA (VERSIÓN NATIVA)
+#      PIE DE PÁGINA DEFINITIVO
 # ==========================================
-st.divider() # Línea separadora visual
+st.divider()
 
-# Usamos columnas para centrar un poco el contenido
-col_izq, col_centro, col_der = st.columns([1, 8, 1])
+# Usamos columnas para centrar
+c1, c2, c3 = st.columns([1, 8, 1])
 
-with col_centro:
-    # 1. Título y Autoría
-    st.markdown(
-        "<h4 style='text-align: center; color: #555;'>Recursos de prevención y posvención del suicidio</h4>", 
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        "<div style='text-align: center;'>Creado por <b>Susana de Castro García</b><br>Enfermera de emergencias (Jaén) | Enero 2026</div>", 
-        unsafe_allow_html=True
-    )
-    st.write("") # Espacio en blanco
+with c2:
+    st.markdown("<div style='text-align: center; color: #555;'>Creado por <b>Susana de Castro García</b></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; color: #555; font-size: 0.9rem;'>Enfermera de emergencias (Jaén) | Enero 2026</div>", unsafe_allow_html=True)
+    
+    st.write("") # Espacio
+    
+    # CAJA LEGAL IMPORTANTE (Esto saldrá en un recuadro de color)
+    st.info("""
+    **🛡️ REGISTRO DE PROPIEDAD INTELECTUAL (Safe Creative)** Código de inscripción: **2301254360025**
+    
+    **⚖️ LICENCIA DE USO** [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es)  
+    *(Se permite compartir citando autoría y sin fines comerciales)*
+    """)
 
-    # 2. Caja de Licencias (Usamos st.info que crea un recuadro azul/gris automático)
-    with st.info("🛡️ **Información de Propiedad Intelectual y Licencia**"):
-        st.markdown("**Registro Safe Creative:**")
-        st.code("2301254360025", language="text") # Muestra el número destacado
-        
-        st.markdown("---") # Pequeña separación
-        
-        st.markdown("⚖️ **Licencia de uso:**")
-        st.markdown("[**CC BY-NC-SA 4.0**](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es) (Creative Commons)")
-        st.caption("✅ Se permite compartir citando autoría. | 🚫 Prohibido uso comercial.")
-
-    # 3. Descargo de responsabilidad final
-    st.caption(
-        "Nota: Los derechos de propiedad intelectual de los recursos externos enlazados "
-        "pertenecen a sus respectivos organismos. Esta herramienta es un directorio facilitador."
-    )
+    st.caption("Nota: Los derechos de propiedad intelectual de los recursos externos enlazados pertenecen a sus respectivos organismos.")
