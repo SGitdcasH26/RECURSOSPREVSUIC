@@ -227,9 +227,13 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-# --- PIE DE PÁGINA DEFINITIVO (CON REGISTROS) ---
-st.markdown("---")
-st.markdown("""
+# ==========================================
+#      PIE DE PÁGINA (ESTRATEGIA INFALIBLE)
+# ==========================================
+
+# 1. Guardamos el diseño en una variable aparte para que no haya errores
+contenido_html = """
+    <hr>
     <div style="text-align: center; color: #555; font-size: 0.9rem; padding-bottom: 20px;">
         <b>Información sobre Recursos de prevención y posvención del suicidio en Andalucía.</b><br>
         Creado por <b>Susana de Castro García</b>, enfermera de emergencias prehospitalarias de Jaén.<br>
@@ -252,4 +256,7 @@ st.markdown("""
             Esta herramienta actúa únicamente como directorio facilitador de acceso.
         </div>
     </div>
-""", unsafe_allow_html=True)
+"""
+
+# 2. Le decimos a Streamlit que lo escriba permitiendo HTML
+st.markdown(contenido_html, unsafe_allow_html=True)
