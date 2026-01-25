@@ -242,4 +242,15 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-st.markdown("<br><center><small>Recurso informativo de prevención y posvención del suicidio en Andalucía</small></center>", unsafe_allow_html=True)
+# --- 7. MOSTRAR RESULTADOS (Parte final del código) ---
+# ... (el bucle for anterior sigue igual) ...
+
+# PIE DE PÁGINA ACTUALIZADO
+st.markdown("---")
+st.markdown("""
+    <div style="text-align: center; color: #666; font-size: 0.85rem;">
+        <b>Información sobre Recursos de prevención y posvención del suicidio en Andalucía.</b><br>
+        Creado por <b>Susana de Castro García</b>, enfermera del CES 061 Andalucía.<br>
+        <i>Enero 2026</i>
+    </div>
+""", unsafe_allow_html=True)
