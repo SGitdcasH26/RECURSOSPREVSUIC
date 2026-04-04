@@ -206,7 +206,7 @@ else:
         html_contacto = ""
         if tel and len(tel) > 2:
             html_contacto += f'<div class="dato">📞 <b>Tel:</b> <a href="tel:{tel}">{tel}</a></div>'
-        if web and len(web) > 4:
+        if isinstance(web, str) and len(web) > 4:
             link_web = web if web.startswith('http') else f'https://{web}'
             html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
         if email and "@" in email:
