@@ -209,7 +209,7 @@ else:
         if isinstance(web, str) and len(web) > 4:
             link_web = web if web.startswith('http') else f'https://{web}'
             html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
-       if isinstance(email, str) and "@" in email:
+        if isinstance(email, str) and "@" in email:
             html_contacto += f'<div class="dato">📧 <b>Email:</b> <a href="mailto:{email}">{email}</a></div>'
 
         st.markdown(f"""
