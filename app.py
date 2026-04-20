@@ -16,6 +16,7 @@ st.markdown("""
     .titulo {color: #2C3E50; font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;}
     .subtitulo {font-size: 0.9rem; color: #666; margin-bottom: 10px; font-style: italic;}
     .dato {font-size: 0.95rem; margin-bottom: 5px; color: #444;}
+    .info-extra {font-size: 0.85rem; color: #555; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee;}
     
     /* Etiquetas visuales */
     .tag {
@@ -191,8 +192,10 @@ else:
         tel = row['Teléfono(s) de contacto']
         web = row['Web']
         email = row['Email']
+        horario = row.get('Horario de atención', '-')
+        coste = row.get('Coste', '-')
         
-        # Iconos
+        # Iconos y Etiquetas
         if prov.lower() == 'nacional':
             icono, lbl_class, lbl_text = "🇪🇸", "tag-nacional", "NACIONAL"
         elif prov.lower() == 'online':
@@ -202,16 +205,42 @@ else:
         else:
             icono, lbl_class, lbl_text = "📍", "tag-local", f"{prov} - {ambito}"
 
-        # Contacto HTML
+        # --- BLOQUE DE CONTACTO BLINDADO ---
         html_contacto = ""
-        if tel and len(tel) > 2:
-            html_contacto += f'<div class="dato">📞 <b>Tel:</b> <a href="tel:{tel}">{tel}</a></div>'
-        if isinstance(web, str) and len(web) > 4:
+        
+        # Lógica para teléfonos (maneja múltiples separados por comas)
+        if isinstance(tel, str) and len(tel) > 2 and tel != "_" and tel != "-":
+            lista_telefonos = tel.split(",")
+            enlaces_tel = []
+            for num in lista_telefonos:
+                num_limpio = num.strip()
+                num_llamar = num_limpio.replace(" ", "")
+                if num_limpio:
+                    enlaces_tel.append(f'<a href="tel:{num_llamar}">{num_limpio}</a>')
+            
+            if enlaces_tel:
+                telefonos_unidos = " / ".join(enlaces_tel)
+                html_contacto += f'<div class="dato">📞 <b>Tel:</b> {telefonos_unidos}</div>'
+
+        # Lógica para la Web
+        if isinstance(web, str) and len(web) > 4 and web != "_" and web != "-":
             link_web = web if web.startswith('http') else f'https://{web}'
             html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
-        if isinstance(email, str) and "@" in email:
+        
+        # Lógica para el Email
+        if isinstance(email, str) and "@" in email and email != "_" and email != "-":
             html_contacto += f'<div class="dato">📧 <b>Email:</b> <a href="mailto:{email}">{email}</a></div>'
 
+        # Lógica para Horario y Coste (Nueva información visual)
+        html_extra = ""
+        if isinstance(horario, str) and len(horario) > 2 and horario != "_" and horario != "-":
+            html_extra += f'🕒 <b>Horario:</b> {horario} <br>'
+        if isinstance(coste, str) and len(coste) > 2 and coste != "_" and coste != "-":
+            html_extra += f'💶 <b>Coste:</b> {coste}'
+            
+        div_extra = f'<div class="info-extra">{html_extra}</div>' if html_extra else ""
+
+        # Montaje final de la tarjeta HTML
         st.markdown(f"""
         <div class="card">
             <div class="titulo">{icono} {nombre}</div>
@@ -224,11 +253,12 @@ else:
             <div style="margin-top:5px; font-size:0.8rem; color:#888;">
                 <b>Dirigido a:</b> {dirigido}
             </div>
+            {div_extra}
         </div>
         """, unsafe_allow_html=True)
 
 # ==========================================
-#      PIE DE PÁGINA DEFINITIVO
+#     PIE DE PÁGINA DEFINITIVO
 # ==========================================
 st.divider()
 
