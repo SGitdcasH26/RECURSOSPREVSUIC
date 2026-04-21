@@ -37,21 +37,23 @@ st.markdown("""
 @st.cache_data
 def cargar_datos():
     try:
+        # Intentamos leer el CSV con el delimitador punto y coma
         df = pd.read_csv("recursos.csv", sep=";", encoding='utf-8')
     except:
         try:
             df = pd.read_csv("recursos.csv", sep=";", encoding='latin-1')
         except:
-            st.error("⚠️ Error crítico: No puedo leer el archivo recursos.csv. Verifica que esté subido.")
+            st.error("⚠️ Error crítico: No puedo leer el archivo recursos.csv. Verifica que esté subido a GitHub.")
             st.stop()
     
-    # Limpieza básica
+    # Limpieza de espacios, valores nulos y GUIONES vacíos
     df.columns = df.columns.str.strip()
     for col in df.columns:
         if df[col].dtype == object:
-            df[col] = df[col].astype(str).str.strip().replace('nan', '')
+            # Si encuentra un guion '-' aislado, lo borra para que no ensucie la tarjeta
+            df[col] = df[col].astype(str).str.strip().replace(['nan', 'None', '_', '-'], '')
 
-    # Normalizar Provincia
+    # Normalizar Provincia (para que Jaén/Andalucía se lea como Jaén)
     if 'Provincia' in df.columns:
         df['Provincia'] = df['Provincia'].apply(lambda x: x.split('/')[0].strip() if '/' in x else x)
 
@@ -73,7 +75,7 @@ opciones_perfil = [
     "🆘 Tengo pensamientos suicidas / He intentado suicidarme",
     "👫 Busco ayuda para un menor o un joven",
     "👥 Población general",
-    "🧑‍⚕️ Profesionales sanitarios y primeros intervinientes",
+    "🚑 Profesionales sanitarios y primeros intervinientes",
     "🎗️ He perdido a un ser querido por suicidio"
 ]
 
@@ -89,7 +91,7 @@ with col2:
     ])
     provincia_seleccionada = st.selectbox("Selecciona tu Provincia:", provincias_disponibles)
 
-# Búsqueda localidad
+# Búsqueda por localidad
 localidad = st.text_input("Escribe tu localidad (Opcional):", placeholder="Ej: Bailén, Motril...")
 
 # --- 5. LÓGICA DE FILTRADO ---
@@ -103,7 +105,7 @@ criterio_geografico = (
 )
 df_filtrado = df[criterio_geografico].copy()
 
-# PASO 2: FILTRO POR PERFIL
+# PASO 2: FILTRO POR PERFIL (Keywords)
 def buscar_keywords(texto_fila, keywords):
     texto_fila = texto_fila.lower()
     return any(k in texto_fila for k in keywords)
@@ -120,7 +122,7 @@ elif "👥" in perfil_usuario:
     keywords = ['población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
-elif "🧑‍⚕️" in perfil_usuario:
+elif "🚑" in perfil_usuario: # Actualizado con el icono de la ambulancia
     keywords = ['profesional', 'sanitario', 'interviniente', 'población general']
     filtro_perfil = df_filtrado['Dirigido a'].apply(lambda x: buscar_keywords(x, keywords))
 
@@ -150,14 +152,19 @@ def calcular_orden(row):
     ambito = str(row['Localidad / Ámbito']).lower()
     prov_usuario = provincia_seleccionada.lower()
     
-    # A. LÓGICA ESPECIAL PARA GRUPO SOS
+    # A. Prioridad para perfil SOS
     if "🆘" in perfil_usuario:
         if "061" in nombre or "112" in nombre or "024" in nombre:
             return -10 
         if "salud responde" in nombre:
             return -5
 
-    # B. LÓGICA DE ORDEN GEOGRÁFICO
+    # B. Prioridad ANAR para perfil Jóvenes/Menores
+    if "👫" in perfil_usuario:
+        if "anar" in nombre:
+            return -10
+
+    # C. Orden geográfico general
     if localidad and localidad.lower() in ambito: 
         return 0
     if prov_recurso == prov_usuario:
@@ -192,10 +199,12 @@ else:
         tel = row['Teléfono(s) de contacto']
         web = row['Web']
         email = row['Email']
-        horario = row.get('Horario de atención', '-')
-        coste = row.get('Coste', '-')
+        modalidad = row.get('Modalidad', '')
+        horario = row.get('Horario de atención', '')
+        atencion = row.get('Tipo de atención', '')
+        coste = row.get('Coste', '')
         
-        # Iconos y Etiquetas
+        # Iconos y Etiquetas de ubicación
         if prov.lower() == 'nacional':
             icono, lbl_class, lbl_text = "🇪🇸", "tag-nacional", "NACIONAL"
         elif prov.lower() == 'online':
@@ -205,42 +214,41 @@ else:
         else:
             icono, lbl_class, lbl_text = "📍", "tag-local", f"{prov} - {ambito}"
 
-        # --- BLOQUE DE CONTACTO BLINDADO ---
+        # --- BLOQUE DE CONTACTO ---
         html_contacto = ""
         
-        # Lógica para teléfonos (maneja múltiples separados por comas)
-        if isinstance(tel, str) and len(tel) > 2 and tel != "_" and tel != "-":
-            lista_telefonos = tel.split(",")
-            enlaces_tel = []
-            for num in lista_telefonos:
-                num_limpio = num.strip()
-                num_llamar = num_limpio.replace(" ", "")
-                if num_limpio:
-                    enlaces_tel.append(f'<a href="tel:{num_llamar}">{num_limpio}</a>')
-            
-            if enlaces_tel:
-                telefonos_unidos = " / ".join(enlaces_tel)
-                html_contacto += f'<div class="dato">📞 <b>Tel:</b> {telefonos_unidos}</div>'
+        # Teléfonos inteligentes (varios separados por comas)
+        if isinstance(tel, str) and len(tel) > 2:
+            lista_tels = [t.strip() for t in tel.split(",")]
+            enlaces = []
+            for t in lista_tels:
+                t_limpio = t.replace(" ", "")
+                enlaces.append(f'<a href="tel:{t_limpio}">{t}</a>')
+            html_contacto += f'<div class="dato">📞 <b>Tel:</b> {" / ".join(enlaces)}</div>'
 
-        # Lógica para la Web
-        if isinstance(web, str) and len(web) > 4 and web != "_" and web != "-":
-            link_web = web if web.startswith('http') else f'https://{web}'
-            html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{link_web}" target="_blank">Visitar sitio</a></div>'
+        # Web
+        if isinstance(web, str) and len(web) > 4:
+            url = web if web.startswith('http') else f'https://{web}'
+            html_contacto += f'<div class="dato">🌐 <b>Web:</b> <a href="{url}" target="_blank">Visitar sitio</a></div>'
         
-        # Lógica para el Email
-        if isinstance(email, str) and "@" in email and email != "_" and email != "-":
+        # Email
+        if isinstance(email, str) and "@" in email:
             html_contacto += f'<div class="dato">📧 <b>Email:</b> <a href="mailto:{email}">{email}</a></div>'
 
-        # Lógica para Horario y Coste (Nueva información visual)
+        # --- BLOQUE DE INFORMACIÓN EXTRA ---
         html_extra = ""
-        if isinstance(horario, str) and len(horario) > 2 and horario != "_" and horario != "-":
+        if isinstance(modalidad, str) and len(modalidad) > 1:
+            html_extra += f'💻 <b>Modalidad:</b> {modalidad} <br>'
+        if isinstance(horario, str) and len(horario) > 1:
             html_extra += f'🕒 <b>Horario:</b> {horario} <br>'
-        if isinstance(coste, str) and len(coste) > 2 and coste != "_" and coste != "-":
+        if isinstance(atencion, str) and len(atencion) > 1:
+            html_extra += f'🤝 <b>Atención:</b> {atencion} <br>'
+        if isinstance(coste, str) and len(coste) > 1:
             html_extra += f'💶 <b>Coste:</b> {coste}'
             
         div_extra = f'<div class="info-extra">{html_extra}</div>' if html_extra else ""
 
-        # Montaje final de la tarjeta HTML
+        # Montaje de la tarjeta
         st.markdown(f"""
         <div class="card">
             <div class="titulo">{icono} {nombre}</div>
@@ -250,33 +258,22 @@ else:
             <div style="background-color: #f0f2f6; padding: 10px; border-radius: 8px;">
                 {html_contacto if html_contacto else "<small><i>Consultar web para más detalles</i></small>"}
             </div>
-            <div style="margin-top:5px; font-size:0.8rem; color:#888;">
+            <div style="margin-top:10px; font-size:0.8rem; color:#888;">
                 <b>Dirigido a:</b> {dirigido}
             </div>
             {div_extra}
         </div>
         """, unsafe_allow_html=True)
 
-# ==========================================
-#     PIE DE PÁGINA DEFINITIVO
-# ==========================================
+# --- PIE DE PÁGINA ---
 st.divider()
-
-# Usamos columnas para centrar
 c1, c2, c3 = st.columns([1, 8, 1])
-
 with c2:
     st.markdown("<div style='text-align: center; color: #555;'>Creado por <b>Susana de Castro García</b></div>", unsafe_allow_html=True)
     st.markdown("<div style='text-align: center; color: #555; font-size: 0.9rem;'>Enfermera de emergencias prehospitalarias (Jaén) | Enero 2026</div>", unsafe_allow_html=True)
-    
-    st.write("") # Espacio
-    
-    # CAJA LEGAL IMPORTANTE (Esto saldrá en un recuadro de color)
+    st.write("")
     st.info("""
     **🛡️ REGISTRO DE PROPIEDAD INTELECTUAL (Safe Creative)** Código de inscripción: **2301254360025**
-    
-    **⚖️ LICENCIA DE USO** [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es)  
-    *(Se permite compartir citando autoría y sin fines comerciales)*
+    **⚖️ LICENCIA DE USO** [Creative Commons BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.es)
     """)
-
-    st.caption("Nota: Los derechos de propiedad intelectual de los recursos externos enlazados pertenecen a sus respectivos organismos.")
+    st.caption("Nota: Los derechos de propiedad intelectual de los recursos externos pertenecen a sus respectivos organismos.")
