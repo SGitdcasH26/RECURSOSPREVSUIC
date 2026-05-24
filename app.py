@@ -17,8 +17,8 @@ st.markdown("""
         color: #2C3E50 !important;
     }
     
-    /* Evitar letras blancas en botones de radio, selectores y campos de texto */
-    div[data-testid="stRadio"] label, div[data-baseweb="select"] *, input {
+    /* Evitar letras blancas en botones de radio y campos de texto */
+    div[data-testid="stRadio"] label, input {
         color: #2C3E50 !important;
     }
     
@@ -28,7 +28,26 @@ st.markdown("""
         overflow-y: auto !important;
     }
 
-    /* 4. Estilos blindados para las Tarjetas de Recursos */
+    /* 4. PARCHE ESPECÍFICO PARA EL RECUADRO DE PROVINCIA (st.selectbox) */
+    /* Fuerza a que el fondo de la caja del selector sea blanco y su borde gris */
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        color: #2C3E50 !important;
+        border-color: #cccccc !important;
+    }
+    
+    /* Fuerza a que TODO el texto interno del selector sea oscuro */
+    div[data-testid="stSelectbox"] * {
+        color: #2C3E50 !important;
+    }
+    
+    /* Blindaje para la lista de opciones que se despliega al hacer clic */
+    div[data-baseweb="menu"] *, div[role="listbox"] * {
+        background-color: #ffffff !important;
+        color: #2C3E50 !important;
+    }
+
+    /* 5. Estilos blindados para las Tarjetas de Recursos */
     .stApp .card {
         background-color: white !important; 
         padding: 20px; 
@@ -120,7 +139,7 @@ except Exception as e:
 
 # --- 4. INTERFAZ DE USUARIO ---
 st.title("🧭 Recursos Ayuda Andalucía")
-st.markdown("##### Encuentra ayuda especializada en prevención and duelo por suicidio.")
+st.markdown("##### Encuentra ayuda especializada en prevención y duelo por suicidio.")
 
 opciones_perfil = [
     "🆘 Tengo pensamientos suicidas / He intentado suicidarme",
